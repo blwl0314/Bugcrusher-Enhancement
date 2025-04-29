@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Premium FAQ Assistant</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #4361ee;
+        --secondary-color: #3f37c9;
+        --accent-color: #4895ef;
+        --light-color: #f8f9fa;
+        --dark-color: #212529;
+        --success-color: #4cc9f0;
+        --warning-color: #f72585;
+        --border-radius: 12px;
+        --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        --transition: all 0.3s ease;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+      }
+
+      .faqbot-container {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 380px;
+        z-index: 9999;
+        transform: translateY(20px);
+        opacity: 0;
+        transition: var(--transition);
+      }
+
+      .faqbot-container.visible {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .faqbot-minimized {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        box-shadow: var(--box-shadow);
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        z-index: 2;
+        transition: var(--transition);
+      }
+
+      .faqbot-minimized:hover {
+        transform: scale(1.1);
+      }
+
+      .faqbot-minimized i {
+        font-size: 24px;
+        color: white;
+      }
+
+      .faqbot-window {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        overflow: hidden;
+        transform: scale(0.9);
+        transform-origin: bottom right;
+        transition: var(--transition);
+        height: 0;
+        width: 0;
+        position: relative;
+      }
+
+      .faqbot-window.active {
+        height: 600px;
+        width: 100%;
+        transform: scale(1);
+      }
+
+      .faqbot-header {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        color: white;
+        padding: 18px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+      }
+
+      .faqbot-header::after {
+        content: "";
+        position: absolute;
+        bottom: -10px;
+        left: 25px;
+        width: 20px;
+        height: 20px;
+        background-color: white;
+        transform: rotate(45deg);
+        z-index: 1;
+        opacity: 0;
+        transition: var(--transition);
+      }
+
+      .faqbot-header.active::after {
+        opacity: 1;
+      }
+
+      .faqbot-header h3 {
+        font-weight: 600;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .faqbot-header h3 i {
+        font-size: 20px;
+      }
+
+      .faqbot-actions {
+        display: flex;
+        gap: 15px;
+      }
+
+      .faqbot-actions button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: var(--transition);
+        opacity: 0.8;
+      }
+
+      .faqbot-actions button:hover {
+        opacity: 1;
+        transform: scale(1.1);
+      }
+
+      .faqbot-body {
+        display: flex;
+        flex-direction: column;
+        height: calc(100% - 60px);
+      }
+
+      .faqbot-messages {
+        flex-grow: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        background-color: #f5f7fb;
+      }
+
+      .message {
+        max-width: 80%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        line-height: 1.4;
+        font-size: 14px;
+        position: relative;
+        animation: fadeIn 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .bot-message {
+        background-color: white;
+        color: var(--dark-color);
+        border-top-left-radius: 4px;
+        align-self: flex-start;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .user-message {
+        background: linear-gradient(
+          135deg,
+          var(--accent-color),
+          var(--primary-color)
+        );
+        color: white;
+        border-top-right-radius: 4px;
+        align-self: flex-end;
+      }
+
+      .message-time {
+        display: block;
+        font-size: 10px;
+        opacity: 0.7;
+        margin-top: 4px;
+        text-align: right;
+      }
+
+      .faqbot-input-area {
+        padding: 15px;
+        border-top: 1px solid #e9ecef;
+        background-color: white;
+        position: relative;
+      }
+
+      .faqbot-input-wrapper {
+        display: flex;
+        align-items: center;
+        background-color: #f5f7fb;
+        border-radius: 24px;
+        padding: 5px 5px 5px 15px;
+      }
+
+      .faqbot-input {
+        flex-grow: 1;
+        border: none;
+        background: transparent;
+        padding: 10px 0;
+        font-family: "Poppins", sans-serif;
+        font-size: 14px;
+        outline: none;
+        color: var(--dark-color);
+      }
+
+      .faqbot-send {
+        background: linear-gradient(
+          135deg,
+          var(--accent-color),
+          var(--primary-color)
+        );
+        color: white;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .faqbot-send:hover {
+        transform: scale(1.1);
+      }
+
+      .faqbot-send i {
+        font-size: 16px;
+      }
+
+      .suggested-questions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+        animation: fadeIn 0.5s ease;
+      }
+
+      .suggested-question {
+        background-color: white;
+        color: var(--primary-color);
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: var(--transition);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e9ecef;
+      }
+
+      .suggested-question:hover {
+        background-color: var(--primary-color);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
+      }
+
+      .typing-indicator {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 12px 16px;
+        background-color: white;
+        border-radius: 18px;
+        border-top-left-radius: 4px;
+        align-self: flex-start;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 15px;
+        width: fit-content;
+      }
+
+      .typing-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #ccc;
+        border-radius: 50%;
+        animation: typingAnimation 1.4s infinite ease-in-out;
+      }
+
+      .typing-dot:nth-child(1) {
+        animation-delay: 0s;
+      }
+
+      .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+
+      .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes typingAnimation {
+        0%,
+        60%,
+        100% {
+          transform: translateY(0);
+        }
+        30% {
+          transform: translateY(-5px);
+          background-color: var(--accent-color);
+        }
+      }
+
+      .quick-replies {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .quick-reply {
+        background-color: white;
+        color: var(--primary-color);
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid #e9ecef;
+      }
+
+      .quick-reply:hover {
+        background-color: var(--primary-color);
+        color: white;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 480px) {
+        .faqbot-container {
+          right: 15px;
+          bottom: 15px;
+          width: calc(100% - 30px);
+          max-width: 380px;
+        }
+
+        .faqbot-window.active {
+          height: 70vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="faqbot-container">
+      <div class="faqbot-minimized" id="minimizedBot">
+        <i class="fas fa-comment-dots"></i>
+      </div>
+
+      <div class="faqbot-window" id="botWindow">
+        <div class="faqbot-header" id="botHeader">
+          <h3><i class="fas fa-robot"></i> FAQ Assistant</h3>
+          <div class="faqbot-actions">
+            <button id="minimizeBot" title="Minimize">
+              <i class="fas fa-window-minimize"></i>
+            </button>
+            <button id="closeBot" title="Close">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div class="faqbot-body" id="botBody">
+          <div class="faqbot-messages" id="botMessages">
+            <!-- Messages will appear here -->
+          </div>
+          <div class="faqbot-input-area">
+            <div class="faqbot-input-wrapper">
+              <input
+                type="text"
+                class="faqbot-input"
+                id="userInput"
+                placeholder="Type your question..."
+                autocomplete="off"
+              />
+              <button class="faqbot-send" id="sendButton">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // DOM elements
+        const faqbotContainer = document.querySelector(".faqbot-container");
+        const minimizedBot = document.getElementById("minimizedBot");
+        const botWindow = document.getElementById("botWindow");
+        const botHeader = document.getElementById("botHeader");
+        const botMessages = document.getElementById("botMessages");
+        const userInput = document.getElementById("userInput");
+        const sendButton = document.getElementById("sendButton");
+        const closeBot = document.getElementById("closeBot");
+        const minimizeBot = document.getElementById("minimizeBot");
+
+        // Make container visible after load
+        setTimeout(() => {
+          faqbotContainer.classList.add("visible");
+        }, 500);
+
+        // FAQ data - customize with your own questions and answers
+        const faqData = [
+          {
+            question: "What are the Sustainable Development Goals?",
+            answer:
+              "The Sustainable Development Goals (SDGs) are a collection of 17 interlinked global goals designed to be a blueprint to achieve a better and more sustainable future for all. They were established by the United Nations in 2015 and aim to be achieved by 2030. The SDGs address global challenges including poverty, inequality, climate change, environmental degradation, peace and justice.",
+            quickReplies: [
+              "How many SDGs are there?",
+              "When were the SDGs established?",
+            ],
+          },
+          {
+            question: "How many SDGs are there?",
+            answer:
+              "There are 17 Sustainable Development Goals. They cover a broad range of social and economic development issues including poverty, hunger, health, education, climate change, gender equality, water, sanitation, energy, environment and social justice.",
+            quickReplies: [
+              "What is SDG 1 about?",
+              "Which SDG is about climate action?",
+            ],
+          },
+          {
+            question: "What is SDG 1 about?",
+            answer:
+              "SDG 1 is 'No Poverty'. It aims to end poverty in all its forms everywhere. The goal targets include eradicating extreme poverty (currently measured as people living on less than $1.25 a day), reducing by half the proportion of people living in poverty, and implementing social protection systems.",
+            quickReplies: [
+              "What is SDG 2 about?",
+              "How is poverty measured for SDG 1?",
+            ],
+          },
+          {
+            question: "Which SDG is about climate action?",
+            answer:
+              "SDG 13 is 'Climate Action'. It calls for urgent action to combat climate change and its impacts. Key targets include strengthening resilience to climate-related hazards, integrating climate change measures into policies, and improving education on climate change mitigation.",
+            quickReplies: [
+              "What are the targets of SDG 13?",
+              "How does climate change affect other SDGs?",
+            ],
+          },
+          {
+            question: "What is SDG 4 about?",
+            answer:
+              "SDG 4 is 'Quality Education'. It aims to ensure inclusive and equitable quality education and promote lifelong learning opportunities for all. Key targets include ensuring all children complete free primary and secondary education, increasing the number of youth with relevant skills, and eliminating gender disparities in education.",
+            quickReplies: [
+              "How does education relate to other SDGs?",
+              "What is the progress on SDG 4?",
+            ],
+          },
+          {
+            question: "What is SDG 5 about?",
+            answer:
+              "SDG 5 is 'Gender Equality'. It aims to achieve gender equality and empower all women and girls. Targets include ending discrimination against women, eliminating violence against women, ensuring women's participation in leadership, and ensuring universal access to sexual and reproductive health.",
+            quickReplies: [
+              "How is gender equality measured?",
+              "What is the current status of SDG 5?",
+            ],
+          },
+          {
+            question: "How are the SDGs interconnected?",
+            answer:
+              "The SDGs are deeply interconnected - progress in one goal often depends on progress in others. For example, achieving quality education (SDG 4) can help reduce poverty (SDG 1) and improve health (SDG 3). Climate action (SDG 13) affects life below water (SDG 14) and life on land (SDG 15). This interconnectedness means solutions must be integrated and holistic.",
+            quickReplies: [
+              "Can you give another example of SDG connections?",
+              "Why is the interconnectedness important?",
+            ],
+          },
+          {
+            question: "What is the 2030 Agenda?",
+            answer:
+              "The 2030 Agenda for Sustainable Development is a plan of action adopted by all UN member states in 2015. It includes the 17 SDGs and provides a shared blueprint for peace and prosperity for people and the planet. The agenda recognizes that ending poverty must go hand-in-hand with strategies that improve health and education, reduce inequality, and spur economic growth – all while tackling climate change.",
+            quickReplies: [
+              "How is progress on the 2030 Agenda measured?",
+              "What comes after 2030?",
+            ],
+          },
+        ];
+
+        // Suggested questions to show initially
+        const suggestedQuestions = [
+          "What are the Sustainable Development Goals?",
+          "How many SDGs are there?",
+          "Which SDG is about climate action?",
+          "How are the SDGs interconnected?",
+        ];
+
+        // Toggle bot visibility
+        minimizedBot.addEventListener("click", function () {
+          minimizedBot.style.display = "none";
+          botWindow.classList.add("active");
+          botHeader.classList.add("active");
+
+          // Show welcome message if this is the first interaction
+          if (botMessages.children.length === 0) {
+            showWelcomeMessage();
+          }
+        });
+
+        minimizeBot.addEventListener("click", function () {
+          botWindow.classList.remove("active");
+          botHeader.classList.remove("active");
+          setTimeout(() => {
+            minimizedBot.style.display = "flex";
+          }, 300);
+        });
+
+        closeBot.addEventListener("click", function () {
+          faqbotContainer.classList.remove("visible");
+          setTimeout(() => {
+            faqbotContainer.style.display = "none";
+          }, 300);
+        });
+
+        // Send message when button is clicked or Enter is pressed
+        sendButton.addEventListener("click", sendMessage);
+        userInput.addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            sendMessage();
+          }
+        });
+
+        function sendMessage() {
+          const question = userInput.value.trim();
+          if (question === "") return;
+
+          // Add user message to chat
+          addMessage(question, "user");
+          userInput.value = "";
+
+          // Show typing indicator
+          showTypingIndicator();
+
+          // Find answer after a short delay (simulate processing)
+          setTimeout(() => {
+            // Remove typing indicator
+            const typingIndicator = document.querySelector(".typing-indicator");
+            if (typingIndicator) typingIndicator.remove();
+
+            const response = findAnswer(question);
+            addMessage(response.answer, "bot");
+
+            // Add quick replies if available
+            if (response.quickReplies && response.quickReplies.length > 0) {
+              addQuickReplies(response.quickReplies);
+            }
+
+            // Scroll to bottom
+            botMessages.scrollTop = botMessages.scrollHeight;
+          }, 1500);
+        }
+
+        function addMessage(text, sender) {
+          const messageDiv = document.createElement("div");
+          messageDiv.classList.add("message");
+          messageDiv.classList.add(sender + "-message");
+          messageDiv.textContent = text;
+
+          // Add timestamp
+          const timeDiv = document.createElement("span");
+          timeDiv.classList.add("message-time");
+          timeDiv.textContent = getCurrentTime();
+          messageDiv.appendChild(timeDiv);
+
+          botMessages.appendChild(messageDiv);
+
+          // Scroll to bottom
+          botMessages.scrollTop = botMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+          const typingDiv = document.createElement("div");
+          typingDiv.classList.add("typing-indicator");
+
+          for (let i = 0; i < 3; i++) {
+            const dot = document.createElement("div");
+            dot.classList.add("typing-dot");
+            typingDiv.appendChild(dot);
+          }
+
+          botMessages.appendChild(typingDiv);
+          botMessages.scrollTop = botMessages.scrollHeight;
+        }
+
+        function findAnswer(question) {
+          // Simple matching - in a real application you might use more advanced NLP
+          const lowerQuestion = question.toLowerCase();
+
+          // First try exact matches
+          for (const item of faqData) {
+            if (lowerQuestion === item.question.toLowerCase()) {
+              return item;
+            }
+          }
+
+          // Then try partial matches
+          for (const item of faqData) {
+            if (
+              lowerQuestion.includes(item.question.toLowerCase()) ||
+              item.question.toLowerCase().includes(lowerQuestion)
+            ) {
+              return item;
+            }
+          }
+
+          // If no direct match, check for keywords
+          if (
+            lowerQuestion.includes("hour") ||
+            lowerQuestion.includes("open") ||
+            lowerQuestion.includes("time")
+          ) {
+            return faqData.find((item) =>
+              item.question.includes("business hours")
+            );
+          } else if (
+            lowerQuestion.includes("contact") ||
+            lowerQuestion.includes("support") ||
+            lowerQuestion.includes("help")
+          ) {
+            return faqData.find((item) =>
+              item.question.includes("customer support")
+            );
+          } else if (
+            lowerQuestion.includes("refund") ||
+            lowerQuestion.includes("return") ||
+            lowerQuestion.includes("money back")
+          ) {
+            return faqData.find((item) => item.question.includes("refund"));
+          } else if (
+            lowerQuestion.includes("pay") ||
+            lowerQuestion.includes("credit card") ||
+            lowerQuestion.includes("payment")
+          ) {
+            return faqData.find((item) =>
+              item.question.includes("payment methods")
+            );
+          } else if (
+            lowerQuestion.includes("ship") ||
+            lowerQuestion.includes("deliver") ||
+            lowerQuestion.includes("shipping")
+          ) {
+            return faqData.find((item) =>
+              item.question.includes("shipping take")
+            );
+          } else if (
+            lowerQuestion.includes("location") ||
+            lowerQuestion.includes("address") ||
+            lowerQuestion.includes("where")
+          ) {
+            return faqData.find((item) => item.question.includes("located"));
+          }
+
+          // Default response if no match found
+          return {
+            answer:
+              "I'm sorry, I couldn't find an answer to that question. Here are some topics I can help with:",
+            quickReplies: suggestedQuestions,
+          };
+        }
+
+        function addQuickReplies(replies) {
+          const quickRepliesDiv = document.createElement("div");
+          quickRepliesDiv.classList.add("quick-replies");
+
+          replies.forEach((reply) => {
+            const quickReply = document.createElement("div");
+            quickReply.classList.add("quick-reply");
+            quickReply.textContent = reply;
+            quickReply.addEventListener("click", function () {
+              addMessage(reply, "user");
+
+              // Show typing indicator
+              showTypingIndicator();
+
+              setTimeout(() => {
+                // Remove typing indicator
+                const typingIndicator =
+                  document.querySelector(".typing-indicator");
+                if (typingIndicator) typingIndicator.remove();
+
+                const response = findAnswer(reply);
+                addMessage(response.answer, "bot");
+
+                // Add quick replies if available
+                if (response.quickReplies && response.quickReplies.length > 0) {
+                  addQuickReplies(response.quickReplies);
+                }
+
+                // Scroll to bottom
+                botMessages.scrollTop = botMessages.scrollHeight;
+              }, 1500);
+            });
+            quickRepliesDiv.appendChild(quickReply);
+          });
+
+          botMessages.appendChild(quickRepliesDiv);
+          botMessages.scrollTop = botMessages.scrollHeight;
+        }
+
+        function showWelcomeMessage() {
+          addMessage(
+            "Hello there! 👋 I'm your FAQ Assistant. I can help answer your questions about our services, policies, and more. What would you like to know?",
+            "bot"
+          );
+
+          // Show suggested questions
+          const suggestionsDiv = document.createElement("div");
+          suggestionsDiv.classList.add("suggested-questions");
+
+          suggestedQuestions.forEach((question) => {
+            const suggestion = document.createElement("div");
+            suggestion.classList.add("suggested-question");
+            suggestion.textContent = question;
+            suggestion.addEventListener("click", function () {
+              addMessage(question, "user");
+
+              // Show typing indicator
+              showTypingIndicator();
+
+              setTimeout(() => {
+                // Remove typing indicator
+                const typingIndicator =
+                  document.querySelector(".typing-indicator");
+                if (typingIndicator) typingIndicator.remove();
+
+                const response = findAnswer(question);
+                addMessage(response.answer, "bot");
+
+                // Add quick replies if available
+                if (response.quickReplies && response.quickReplies.length > 0) {
+                  addQuickReplies(response.quickReplies);
+                }
+
+                // Scroll to bottom
+                botMessages.scrollTop = botMessages.scrollHeight;
+              }, 1500);
+            });
+            suggestionsDiv.appendChild(suggestion);
+          });
+
+          botMessages.appendChild(suggestionsDiv);
+          botMessages.scrollTop = botMessages.scrollHeight;
+        }
+
+        function getCurrentTime() {
+          const now = new Date();
+          let hours = now.getHours();
+          let minutes = now.getMinutes();
+          const ampm = hours >= 12 ? "PM" : "AM";
+
+          hours = hours % 12;
+          hours = hours ? hours : 12; // the hour '0' should be '12'
+          minutes = minutes < 10 ? "0" + minutes : minutes;
+
+          return hours + ":" + minutes + " " + ampm;
+        }
+      });
+    </script>
+  </body>
+</html>
