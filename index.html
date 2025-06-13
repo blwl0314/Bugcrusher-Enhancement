@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Premium FAQ Assistant</title>
     <link
       rel="stylesheet"
@@ -33,18 +33,10 @@
       }
 
       body {
-        transform: none !important;
+        font-family: "Poppins", sans-serif;
       }
-      
-      body, html {
-        overflow: visible !important;
-      }
-      body > *:not(.faqbot-container) {
-        opacity: 0.5;
-      }
+
       .faqbot-container {
-        border: 3px solid red !important;
-        background: rgba(255,0,0,0.2) !important;
         position: fixed;
         bottom: 30px;
         right: 30px;
@@ -517,7 +509,6 @@
           "What do the different chart types show?",
           "How can I contribute to SDG7?"
         ];
-            
         // Toggle bot visibility
         minimizedBot.addEventListener("click", function () {
           minimizedBot.style.display = "none";
