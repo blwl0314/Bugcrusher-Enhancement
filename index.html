@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Premium FAQ Assistant</title>
     <link
       rel="stylesheet"
@@ -33,9 +33,15 @@
       }
 
       body {
-        font-family: "Poppins", sans-serif;
+        transform: none !important;
       }
-
+      
+      body, html {
+        overflow: visible !important;
+      }
+      body > *:not(.faqbot-container) {
+        opacity: 0.5;
+      }
       .faqbot-container {
         position: fixed;
         bottom: 30px;
